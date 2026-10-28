@@ -1,0 +1,40 @@
+{
+  "name": "Proactive delay alerts for high-risk orders",
+  "hypothesis": "Setting a realistic ETA and alerting customers before a slip lowers 1-2 star reviews among orders the risk model flags as likely late.",
+  "unit_of_randomization": "customer (hash of customer_unique_id) so repeat buyers stay in one arm",
+  "eligibility": "orders scored in the top 3 risk deciles at payment approval (these held 52.4% of late orders out-of-time)",
+  "primary_metric": "low_review_rate (from the metric registry)",
+  "baseline_pct": 11.1,
+  "baseline_source_orders": 9589,
+  "mde_pp": 2.0,
+  "relative_mde_pct": 18,
+  "alpha": 0.05,
+  "power": 0.8,
+  "n_per_arm": 3567,
+  "total_n": 7134,
+  "eligible_orders_per_month_2018": 1929,
+  "duration_weeks_at_2018_volume": 16.0,
+  "guardrails": [
+    "cancel_rate",
+    "avg delivery days",
+    "support contacts per order",
+    "alert cost per order",
+    "sample ratio mismatch (chi-square p < 0.001 = stop)"
+  ],
+  "secondary_metrics": [
+    "avg_review_score",
+    "late_delivery_rate"
+  ],
+  "decision_rule": "ship if low_review_rate falls at p < 0.05 and no guardrail worsens by more than 2%",
+  "simulation_checks": {
+    "simulations": 2000,
+    "aa_false_positive_rate_pct": 5.4,
+    "simulated_power_pct": 78.8,
+    "method": "resample real Apr-Aug 2018 targeted orders with replacement; two-proportion z-test"
+  },
+  "risks": [
+    "review lag: reviews arrive after delivery, so read results 30 days after enrollment closes",
+    "interference: sellers serve both arms; escalations may also help control orders (bias toward null)",
+    "novelty: run whole weeks and check the effect by week"
+  ]
+}

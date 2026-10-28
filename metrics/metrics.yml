@@ -1,0 +1,95 @@
+# =====================================================================
+# METRICS SEMANTIC LAYER
+# Every business metric is defined ONCE here. Dashboards, analyses and the
+# experiment design all query metrics through src/semantic_layer.py, so a
+# definition change propagates everywhere and two reports can never disagree.
+#
+# type: count  -> COUNT(*) of rows passing filters
+#       sum    -> SUM(expr)
+#       ratio  -> SUM(numerator) / SUM(denominator)
+# =====================================================================
+models:
+  fct_orders:
+    grain: one row per order
+    time_dimension: purchase_month
+    default_filter: "purchase_month BETWEEN '2017-01' AND '2018-08'"   # complete months only
+    dimensions: [purchase_month, primary_payment_type, customer_state, primary_category, is_late]
+  dim_customers:
+    grain: one row per unique customer (first order)
+    time_dimension: first_purchase_month
+    default_filter: "first_purchase_month BETWEEN '2017-01' AND '2018-02'"  # leaves 180 days to observe repurchase
+    dimensions: [first_purchase_month, first_payment_type, customer_state, first_order_late]
+
+metrics:
+  orders:
+    model: fct_orders
+    type: count
+    description: Orders placed (all statuses).
+  gmv:
+    model: fct_orders
+    type: sum
+    expr: items_value
+    filter: "is_canceled = 0"
+    description: Gross merchandise value in BRL, excluding freight and canceled orders.
+  aov:
+    model: fct_orders
+    type: ratio
+    numerator: items_value
+    denominator: 1
+    filter: "is_canceled = 0 AND items_value IS NOT NULL"
+    description: Average order value in BRL (GMV / non-canceled orders).
+  cancel_rate:
+    model: fct_orders
+    type: ratio
+    numerator: is_canceled
+    denominator: 1
+    description: Share of orders canceled or unavailable.
+  payment_approval_rate_24h:
+    model: fct_orders
+    type: ratio
+    numerator: "CASE WHEN approval_lag_hours <= 24 THEN 1 ELSE 0 END"
+    denominator: 1
+    description: Share of orders whose payment was approved within 24 hours of purchase.
+  avg_approval_lag_hours:
+    model: fct_orders
+    type: ratio
+    numerator: approval_lag_hours
+    denominator: "CASE WHEN approval_lag_hours IS NOT NULL THEN 1 ELSE 0 END"
+    description: Mean hours from purchase to payment approval (approved orders only).
+  installment_share:
+    model: fct_orders
+    type: ratio
+    numerator: "CASE WHEN max_installments >= 2 THEN 1 ELSE 0 END"
+    denominator: 1
+    filter: "primary_payment_type = 'credit_card'"
+    description: Share of credit-card orders paid in 2+ installments.
+  late_delivery_rate:
+    model: fct_orders
+    type: ratio
+    numerator: is_late
+    denominator: "CASE WHEN is_late IS NOT NULL THEN 1 ELSE 0 END"
+    description: Share of delivered orders that arrived after the promised date.
+  avg_review_score:
+    model: fct_orders
+    type: ratio
+    numerator: review_score
+    denominator: "CASE WHEN review_score IS NOT NULL THEN 1 ELSE 0 END"
+    description: Mean review score (1-5) among reviewed orders.
+  low_review_rate:
+    model: fct_orders
+    type: ratio
+    numerator: is_low_review
+    denominator: "CASE WHEN is_low_review IS NOT NULL THEN 1 ELSE 0 END"
+    description: Share of reviewed orders scored 1 or 2 stars.
+  recon_break_rate:
+    model: fct_orders
+    type: ratio
+    numerator: "CASE WHEN ABS(recon_diff) > 1 THEN 1 ELSE 0 END"
+    denominator: "CASE WHEN recon_diff IS NOT NULL THEN 1 ELSE 0 END"
+    description: Share of orders where payment total differs from items + freight by more than BRL 1.
+  repurchase_rate_180d:
+    model: dim_customers
+    type: ratio
+    numerator: repurchased_180d
+    denominator: 1
+    description: Share of new customers who place a second order within 180 days.

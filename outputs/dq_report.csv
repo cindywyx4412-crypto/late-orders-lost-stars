@@ -1,0 +1,15 @@
+check_name,layer,severity,failing_rows,total_rows,description,failing_pct,status
+orders_pk_unique,raw,error,0,99441,order_id must be unique in orders,0.0,PASS
+payments_type_not_defined,raw,warn,3,103886,payment_type = not_defined (mapped to unknown in staging),0.0,WARN
+payments_zero_installments,raw,warn,2,103886,installments < 1 (floored to 1 in staging),0.0,WARN
+reviews_duplicate_review_id,raw,warn,814,99224,review_id appears more than once,0.82,WARN
+reviews_multiple_per_order,raw,warn,551,99224,extra reviews per order (deduplicated to latest in staging),0.56,WARN
+orders_without_items,raw,warn,775,99441,orders with no line items (mostly canceled/unavailable),0.78,WARN
+orders_without_payment,raw,warn,1,99441,orders with no payment record,0.0,WARN
+items_orphan_seller,raw,error,0,112650,order items referencing an unknown seller,0.0,PASS
+orders_orphan_customer,raw,error,0,99441,orders referencing an unknown customer,0.0,PASS
+delivered_missing_timestamp,raw,warn,8,99441,status delivered but no delivery timestamp,0.01,WARN
+delivered_before_purchase,raw,error,0,99441,delivery timestamp earlier than purchase timestamp,0.0,PASS
+approved_before_purchase,raw,error,0,99441,payment approved before the order was placed,0.0,PASS
+mart_orders_row_count,mart,error,0,99441,fct_orders must keep exactly one row per raw order (no fan-out from joins),0.0,PASS
+recon_payment_vs_order_value,mart,warn,249,98665,payment total differs from items + freight by more than R$1,0.25,WARN

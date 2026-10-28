@@ -1,0 +1,136 @@
+{
+  "headline": {
+    "window": "Jan 2017 - Aug 2018 (20 complete months)",
+    "orders": 99092,
+    "gmv_brl": 13449530,
+    "aov_brl": 137.37,
+    "cancel_rate_pct": 1.19,
+    "late_delivery_rate_pct": 6.8,
+    "avg_review_score": 4.09,
+    "low_review_rate_pct": 14.6,
+    "payment_approval_24h_pct": 82.4,
+    "installment_share_of_card_orders_pct": 67.9,
+    "sellers": 3029,
+    "customers": 95774,
+    "repurchase_rate_180d_pct": 3.2,
+    "metrics_defined": 12
+  },
+  "data_quality": {
+    "checks": 14,
+    "blocking_failures": 0,
+    "warnings": 8,
+    "rows_flagged": {
+      "payments_type_not_defined": 3,
+      "payments_zero_installments": 2,
+      "reviews_duplicate_review_id": 814,
+      "reviews_multiple_per_order": 551,
+      "orders_without_items": 775,
+      "orders_without_payment": 1,
+      "delivered_missing_timestamp": 8,
+      "recon_payment_vs_order_value": 249
+    }
+  },
+  "reconciliation": {
+    "orders_checked": 98665,
+    "breaks": 249,
+    "break_rate_pct": 0.25,
+    "breaks_from_installment_interest": 228,
+    "share_explained_by_installment_interest_pct": 91.6,
+    "total_abs_diff_brl": 3262.33,
+    "boleto_breaks": 0
+  },
+  "late_to_reviews": {
+    "low_review_on_time_pct": 9.2,
+    "low_review_late_pct": 62.4,
+    "avg_review_on_time": 4.29,
+    "avg_review_late": 2.27,
+    "low_review_8plus_days_late_pct": 79.3,
+    "adjusted_effect_pp": 51.8,
+    "adjusted_effect_ci_pp": [
+      50.5,
+      53.0
+    ],
+    "controls": "customer state, top-20 category, log order value, purchase month; HC1 robust SE",
+    "n": 95560
+  },
+  "late_to_repurchase": {
+    "repurchase_on_time_pct": 3.2,
+    "repurchase_late_pct": 2.78,
+    "adjusted_effect_pp": -0.35,
+    "p_value": 0.233,
+    "conclusion": "not statistically significant; repeat purchase is rare (~3%) on this marketplace"
+  },
+  "payments": {
+    "boleto_order_share_pct": 19.9,
+    "credit_card_order_share_pct": 75.4,
+    "boleto_avg_approval_hours": 33.1,
+    "card_avg_approval_hours": 4.4,
+    "boleto_approved_24h_pct": 42.9,
+    "card_approved_24h_pct": 92.6,
+    "late_rate_fast_approval_pct": 6.5,
+    "late_rate_slow_approval_pct": 8.2,
+    "slow_pay_adjusted_effect_pp": 1.86,
+    "slow_pay_adjusted_effect_ci_pp": [
+      1.42,
+      2.3
+    ],
+    "slow_pay_relative_increase_pct": 29,
+    "slow_pay_orders_share_pct": 17.4
+  },
+  "installments": {
+    "seven_plus_order_share_pct": 16.2,
+    "seven_plus_gmv_share_pct": 34.0,
+    "seven_plus_aov_brl": 301.79,
+    "single_payment_aov_brl": 82.62,
+    "aov_multiple": 3.7
+  },
+  "sellers": {
+    "sellers": 3029,
+    "top10pct_gmv_share_pct": 67.4,
+    "eligible_sellers_30plus_orders": 633,
+    "at_risk_sellers": 172,
+    "risk_rule": "30+ orders and (late rate >= 1.5x platform OR low-review rate >= 1.5x platform)",
+    "at_risk_order_share_pct": 17.4,
+    "at_risk_share_of_late_pct": 29.4,
+    "at_risk_share_of_low_reviews_pct": 24.7,
+    "at_risk_gmv_brl": 2334810,
+    "excess_late_orders_vs_platform": 862,
+    "low_reviews_avoidable_if_fixed": 446
+  },
+  "risk_model": {
+    "model": "HistGradientBoosting, features known at payment approval",
+    "train_window": "2017-01 to 2018-03",
+    "test_window": "2018-04 to 2018-08",
+    "train_n": 64053,
+    "test_n": 32150,
+    "auc": 0.68,
+    "test_late_rate_pct": 4.4,
+    "top_decile_late_rate_pct": 11.5,
+    "top_decile_lift": 2.6,
+    "top_decile_capture_pct": 26.0,
+    "top3_deciles_capture_pct": 52.4,
+    "top3_deciles_low_review_pct": 11.1,
+    "top3_deciles_late_rate_pct": 7.7,
+    "top3_deciles_orders_per_month": 1929
+  },
+  "review_themes": {
+    "low_review_comments": 10737,
+    "delivery_issue_tagged_pct": 42.3,
+    "product_issue_tagged_pct": 29.1,
+    "service_issue_tagged_pct": 17.6,
+    "delivery_issue_bias_corrected_pct": 49.1,
+    "product_issue_bias_corrected_pct": 44.7,
+    "test_set_n": 60,
+    "delivery_precision": 0.79,
+    "delivery_recall": 0.68,
+    "product_precision": 1.0,
+    "product_recall": 0.65,
+    "delivery_issue_share_among_on_time_orders_pct": 26.5,
+    "method": "rule-based Portuguese keyword tagging drafted with Claude; tuned on 50-review dev set; evaluated on held-out 60-review set labelled manually"
+  },
+  "sizing": {
+    "slow_pay_late_orders_avoidable_per_year": 187,
+    "slow_pay_low_reviews_avoidable_per_year": 97,
+    "note": "at the platform's 2017-18 volume; assumes adjusted effects are causal (they are observational)"
+  }
+}

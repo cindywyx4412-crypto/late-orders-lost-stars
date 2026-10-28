@@ -1,0 +1,403 @@
+<title>Late Orders, Lost Stars</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column (~720px) with full-width chart panels; findings read top-down like an analyst memo, numbers set in mono like a ledger. */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --ink: #12161c;
+  --ink-2: #4a5260;
+  --ink-3: #737b88;
+  --rule: #dde1e7;
+  --track: #eceff3;
+  --accent: #2a78d6;          /* series 1: the measure */
+  --accent-soft: #cde2fb;
+  --hot: #eb6834;             /* series 2: highlight / late */
+  --good: #1f7a4a;
+  --font-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111418; --panel: #191d23; --ink: #eef1f5; --ink-2: #b4bcc8; --ink-3: #8a93a1;
+    --rule: #2b313a; --track: #242a32; --accent: #3987e5; --accent-soft: #1c3a5e; --hot: #e5743f; --good: #4cc38a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111418; --panel: #191d23; --ink: #eef1f5; --ink-2: #b4bcc8; --ink-3: #8a93a1;
+  --rule: #2b313a; --track: #242a32; --accent: #3987e5; --accent-soft: #1c3a5e; --hot: #e5743f; --good: #4cc38a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 16px/1.6 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+}
+.wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.01em; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; max-width: 66ch; }
+.eyebrow { font: 500 0.75rem/1.4 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.lede { font-size: 1.15rem; color: var(--ink-2); }
+.mono, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+header { display: grid; gap: 16px; }
+section { display: grid; gap: 18px; }
+.sec-head { display: grid; gap: 6px; border-top: 1px solid var(--rule); padding-top: 22px; }
+.finding { font-size: 1.05rem; }
+.finding b { font-weight: 600; }
+.muted { color: var(--ink-3); font-size: 0.88rem; }
+
+/* KPI ledger strip */
+.ledger { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); border: 1px solid var(--rule); background: var(--panel); border-radius: 6px; }
+.ledger div { padding: 14px 16px; display: grid; gap: 2px; border-right: 1px solid var(--rule); }
+.ledger div:last-child { border-right: 0; }
+.ledger .num { font-size: 1.35rem; font-weight: 500; }
+.ledger .lab { font-size: 0.78rem; color: var(--ink-3); }
+@media (max-width: 560px) { .ledger div { border-right: 0; border-bottom: 1px solid var(--rule); } .ledger div:last-child { border-bottom: 0; } }
+
+/* chart panel */
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 18px 14px; display: grid; gap: 14px; min-width: 0; }
+.panel-head { display: grid; gap: 2px; }
+.panel-title { font: 600 0.95rem/1.3 var(--font-body); }
+.panel-sub { font-size: 0.82rem; color: var(--ink-3); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.grid2 > * { min-width: 0; }
+
+/* horizontal bars */
+.hbars { display: grid; gap: 10px; }
+.hbar { display: grid; grid-template-columns: minmax(92px, 30%) 1fr auto; align-items: center; gap: 10px; font-size: 0.86rem; }
+.hbar .lab { color: var(--ink-2); }
+.hbar .track { height: 14px; background: var(--track); border-radius: 0 4px 4px 0; position: relative; }
+.hbar .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 0 4px 4px 0; }
+.hbar.hi .fill { background: var(--hot); }
+.hbar .val { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.82rem; min-width: 52px; text-align: right; }
+.pair .track { height: 9px; }
+.pair-rows { display: grid; gap: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.8rem; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* column chart (deciles) */
+.cols { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; align-items: end; height: 170px; border-bottom: 1px solid var(--rule); }
+.col { background: var(--accent); border-radius: 4px 4px 0 0; position: relative; }
+.col.hi { background: var(--hot); }
+.col-axis { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; font: 0.72rem var(--font-mono); color: var(--ink-3); text-align: center; }
+.col .tag { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); font: 0.7rem var(--font-mono); color: var(--ink-2); padding-bottom: 2px; white-space: nowrap; }
+
+/* line chart */
+svg.line { width: 100%; height: auto; display: block; overflow: visible; }
+svg.line text { fill: var(--ink-3); font: 11px var(--font-mono); }
+svg.line .grid { stroke: var(--rule); stroke-width: 1; }
+svg.line .path { fill: none; stroke: var(--accent); stroke-width: 2; }
+svg.line .area { fill: var(--accent-soft); opacity: .6; }
+svg.line .dot { fill: var(--accent); stroke: var(--panel); stroke-width: 2; }
+svg.line .hit { fill: transparent; }
+
+/* callouts and lists */
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.stat { border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; display: grid; gap: 2px; }
+.stat.hot { border-color: var(--hot); }
+.stat .num { font-size: 1.4rem; }
+.stat .lab { font-size: 0.82rem; color: var(--ink-2); }
+.note { font-size: 0.88rem; color: var(--ink-2); background: var(--track); border-radius: 6px; padding: 12px 14px; }
+.note b { color: var(--ink); }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+th, td { text-align: left; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 500 0.72rem/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+td.n, th.n { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.pill { font: 500 0.7rem/1 var(--font-mono); padding: 3px 7px; border-radius: 999px; border: 1px solid currentColor; }
+.pill.pass { color: var(--good); } .pill.handled { color: var(--accent); }
+.recs { display: grid; gap: 14px; counter-reset: rec; }
+.rec { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; display: grid; gap: 6px; }
+.rec h3::before { counter-increment: rec; content: counter(rec) ". "; color: var(--accent); }
+.spec { display: grid; grid-template-columns: minmax(110px, 28%) 1fr; gap: 6px 14px; font-size: 0.9rem; }
+.spec dt { color: var(--ink-3); font-size: 0.82rem; }
+.spec dd { margin: 0; min-width: 0; }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.84rem; }
+.flow span.step { background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 10px; }
+.flow span.arr { color: var(--ink-3); font-family: var(--font-mono); }
+ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 66ch; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#tip { position: fixed; pointer-events: none; z-index: 20; background: var(--ink); color: var(--bg); font: 0.78rem/1.4 var(--font-mono); padding: 6px 9px; border-radius: 4px; max-width: 240px; }
+@media (max-width: 480px) { .hbar { grid-template-columns: 1fr auto; } .hbar .lab { grid-column: 1 / -1; } .spec { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Independent analytics project · Olist marketplace, Brazil · <span id="window"></span></div>
+    <h1>Late orders, lost stars</h1>
+    <p class="lede" id="lede"></p>
+    <div class="ledger" id="kpis"></div>
+  </header>
+
+  <section>
+    <div class="sec-head"><div class="eyebrow">Finding 1 · Customer experience</div><h2>A late delivery is the strongest driver of bad reviews</h2></div>
+    <p class="finding" id="f1"></p>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Share of reviews scored 1–2 stars, by days past the promised date</div><div class="panel-sub">Delivered orders with a review, Jan 2017 – Aug 2018</div></div>
+      <div class="hbars" id="c-late"></div>
+    </div>
+    <div class="stat-row" id="s1"></div>
+    <p class="note" id="n1"></p>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="eyebrow">Finding 2 · Payments</div><h2>Slow payment approval makes orders late</h2></div>
+    <p class="finding" id="f2"></p>
+    <div class="grid2">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Payments approved within 24 hours</div><div class="panel-sub">By primary payment method</div></div>
+        <div class="hbars" id="c-pay"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Late-delivery rate by payment approval time</div><div class="panel-sub">Hours from purchase to approval</div></div>
+        <div class="hbars" id="c-lag"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Installment plans carry the high-ticket orders</div><div class="panel-sub">Credit-card orders by number of installments</div></div>
+      <div class="legend"><span><i class="sw" style="background:var(--accent)"></i>Share of orders</span><span><i class="sw" style="background:var(--hot)"></i>Share of GMV</span></div>
+      <div class="hbars" id="c-inst"></div>
+    </div>
+    <p class="note" id="n2"></p>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="eyebrow">Finding 3 · Sellers and complaints</div><h2>A small group of sellers drives a large share of the damage</h2></div>
+    <p class="finding" id="f3"></p>
+    <div class="stat-row" id="s3"></div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">What 1–2 star reviews complain about</div><div class="panel-sub" id="themes-sub"></div></div>
+      <div class="hbars" id="c-themes"></div>
+    </div>
+    <p class="note" id="n3"></p>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="eyebrow">Model · Out-of-time validation</div><h2>Late orders can be flagged at payment approval</h2></div>
+    <p class="finding" id="f4"></p>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Actual late-delivery rate by predicted risk decile</div><div class="panel-sub" id="dec-sub"></div></div>
+      <div class="cols" id="c-dec" role="img"></div>
+      <div class="col-axis" id="c-dec-axis"></div>
+      <div class="legend"><span><i class="sw" style="background:var(--hot)"></i>Top 3 deciles: the test's target group</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Monthly late-delivery rate</div><div class="panel-sub">Promised date missed, share of delivered orders</div></div>
+      <svg class="line" id="c-month" viewBox="0 0 700 220" role="img" aria-label="Monthly late delivery rate"></svg>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="eyebrow">Experiment design</div><h2 id="exp-title"></h2></div>
+    <p class="finding" id="f5"></p>
+    <div class="panel"><dl class="spec" id="spec"></dl></div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Sample size and duration by minimum detectable effect</div><div class="panel-sub">Two-sided test, α = 0.05, power = 0.80, at 2018 order volume</div></div>
+      <div class="table-wrap"><table id="t-power"></table></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="eyebrow">Recommendations</div><h2>What to do, and what it is worth</h2></div>
+    <div class="recs" id="recs"></div>
+    <p class="note" id="canada"></p>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="eyebrow">How it was built</div><h2>Pipeline, metric layer and data checks</h2></div>
+    <div class="flow">
+      <span class="step">8 raw CSVs</span><span class="arr">→</span>
+      <span class="step">SQLite staging (clean, dedupe)</span><span class="arr">→</span>
+      <span class="step">Marts: orders, customers, sellers</span><span class="arr">→</span>
+      <span class="step" id="flow-metrics">Metric registry (YAML)</span><span class="arr">→</span>
+      <span class="step">Analysis, model, test design, this page</span>
+    </div>
+    <p class="finding" id="f7"></p>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Data-quality checks</div><div class="panel-sub">PASS = no issue · HANDLED = issue found and fixed in staging · a blocking failure would stop the pipeline</div></div>
+      <div class="table-wrap"><table id="t-dq"></table></div>
+    </div>
+    <p class="note" id="n7"></p>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="eyebrow">Limits</div><h2>What this study can and cannot claim</h2></div>
+    <ul class="plain">
+      <li>Effects on reviews and lateness come from observational data with controls for state, category, order value and month. They are associations, which is why the recommendation is a randomized test.</li>
+      <li>The dataset covers one Brazilian marketplace in 2017–18. Payment methods such as boleto are local; the Canadian parallel is an argument by analogy.</li>
+      <li>Review themes come from keyword rules in Portuguese. They were checked on a held-out sample, but the sample is small.</li>
+      <li>The experiment is designed, not run. Its power check uses resampled historical orders.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="eyebrow">Sources</div></div>
+    <ul class="plain muted">
+      <li>Data: <a href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce" target="_blank" rel="noopener">Brazilian E-Commerce Public Dataset by Olist</a> (CC BY-NC-SA 4.0), retrieved from a <a href="https://huggingface.co/datasets/bulutttt/olist-raw-data" target="_blank" rel="noopener">mirror</a> with byte-identical files.</li>
+      <li>Canadian context: <a href="https://www.payments.ca/sites/default/files/PaymentsCanada_Canadian_Payment_Methods_and_Trends_2025_EN.pdf" target="_blank" rel="noopener">Payments Canada, Canadian Payment Methods and Trends Report 2025</a>.</li>
+    </ul>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const D = {"f": {"headline": {"window": "Jan 2017 - Aug 2018 (20 complete months)", "orders": 99092, "gmv_brl": 13449530, "aov_brl": 137.37, "cancel_rate_pct": 1.19, "late_delivery_rate_pct": 6.8, "avg_review_score": 4.09, "low_review_rate_pct": 14.6, "payment_approval_24h_pct": 82.4, "installment_share_of_card_orders_pct": 67.9, "sellers": 3029, "customers": 95774, "repurchase_rate_180d_pct": 3.2, "metrics_defined": 12}, "data_quality": {"checks": 14, "blocking_failures": 0, "warnings": 8, "rows_flagged": {"payments_type_not_defined": 3, "payments_zero_installments": 2, "reviews_duplicate_review_id": 814, "reviews_multiple_per_order": 551, "orders_without_items": 775, "orders_without_payment": 1, "delivered_missing_timestamp": 8, "recon_payment_vs_order_value": 249}}, "reconciliation": {"orders_checked": 98665, "breaks": 249, "break_rate_pct": 0.25, "breaks_from_installment_interest": 228, "share_explained_by_installment_interest_pct": 91.6, "total_abs_diff_brl": 3262.33, "boleto_breaks": 0}, "late_to_reviews": {"low_review_on_time_pct": 9.2, "low_review_late_pct": 62.4, "avg_review_on_time": 4.29, "avg_review_late": 2.27, "low_review_8plus_days_late_pct": 79.3, "adjusted_effect_pp": 51.8, "adjusted_effect_ci_pp": [50.5, 53.0], "controls": "customer state, top-20 category, log order value, purchase month; HC1 robust SE", "n": 95560}, "late_to_repurchase": {"repurchase_on_time_pct": 3.2, "repurchase_late_pct": 2.78, "adjusted_effect_pp": -0.35, "p_value": 0.233, "conclusion": "not statistically significant; repeat purchase is rare (~3%) on this marketplace"}, "payments": {"boleto_order_share_pct": 19.9, "credit_card_order_share_pct": 75.4, "boleto_avg_approval_hours": 33.1, "card_avg_approval_hours": 4.4, "boleto_approved_24h_pct": 42.9, "card_approved_24h_pct": 92.6, "late_rate_fast_approval_pct": 6.5, "late_rate_slow_approval_pct": 8.2, "slow_pay_adjusted_effect_pp": 1.86, "slow_pay_adjusted_effect_ci_pp": [1.42, 2.3], "slow_pay_relative_increase_pct": 29, "slow_pay_orders_share_pct": 17.4}, "installments": {"seven_plus_order_share_pct": 16.2, "seven_plus_gmv_share_pct": 34.0, "seven_plus_aov_brl": 301.79, "single_payment_aov_brl": 82.62, "aov_multiple": 3.7}, "sellers": {"sellers": 3029, "top10pct_gmv_share_pct": 67.4, "eligible_sellers_30plus_orders": 633, "at_risk_sellers": 172, "risk_rule": "30+ orders and (late rate >= 1.5x platform OR low-review rate >= 1.5x platform)", "at_risk_order_share_pct": 17.4, "at_risk_share_of_late_pct": 29.4, "at_risk_share_of_low_reviews_pct": 24.7, "at_risk_gmv_brl": 2334810, "excess_late_orders_vs_platform": 862, "low_reviews_avoidable_if_fixed": 446}, "risk_model": {"model": "HistGradientBoosting, features known at payment approval", "train_window": "2017-01 to 2018-03", "test_window": "2018-04 to 2018-08", "train_n": 64053, "test_n": 32150, "auc": 0.68, "test_late_rate_pct": 4.4, "top_decile_late_rate_pct": 11.5, "top_decile_lift": 2.6, "top_decile_capture_pct": 26.0, "top3_deciles_capture_pct": 52.4, "top3_deciles_low_review_pct": 11.1, "top3_deciles_late_rate_pct": 7.7, "top3_deciles_orders_per_month": 1929}, "review_themes": {"low_review_comments": 10737, "delivery_issue_tagged_pct": 42.3, "product_issue_tagged_pct": 29.1, "service_issue_tagged_pct": 17.6, "delivery_issue_bias_corrected_pct": 49.1, "product_issue_bias_corrected_pct": 44.7, "test_set_n": 60, "delivery_precision": 0.79, "delivery_recall": 0.68, "product_precision": 1.0, "product_recall": 0.65, "delivery_issue_share_among_on_time_orders_pct": 26.5, "method": "rule-based Portuguese keyword tagging drafted with Claude; tuned on 50-review dev set; evaluated on held-out 60-review set labelled manually"}, "sizing": {"slow_pay_late_orders_avoidable_per_year": 187, "slow_pay_low_reviews_avoidable_per_year": 97, "note": "at the platform's 2017-18 volume; assumes adjusted effects are causal (they are observational)"}}, "exp": {"name": "Proactive delay alerts for high-risk orders", "hypothesis": "Setting a realistic ETA and alerting customers before a slip lowers 1-2 star reviews among orders the risk model flags as likely late.", "unit_of_randomization": "customer (hash of customer_unique_id) so repeat buyers stay in one arm", "eligibility": "orders scored in the top 3 risk deciles at payment approval (these held 52.4% of late orders out-of-time)", "primary_metric": "low_review_rate (from the metric registry)", "baseline_pct": 11.1, "baseline_source_orders": 9589, "mde_pp": 2.0, "relative_mde_pct": 18, "alpha": 0.05, "power": 0.8, "n_per_arm": 3567, "total_n": 7134, "eligible_orders_per_month_2018": 1929, "duration_weeks_at_2018_volume": 16.0, "guardrails": ["cancel_rate", "avg delivery days", "support contacts per order", "alert cost per order", "sample ratio mismatch (chi-square p < 0.001 = stop)"], "secondary_metrics": ["avg_review_score", "late_delivery_rate"], "decision_rule": "ship if low_review_rate falls at p < 0.05 and no guardrail worsens by more than 2%", "simulation_checks": {"simulations": 2000, "aa_false_positive_rate_pct": 5.4, "simulated_power_pct": 78.8, "method": "resample real Apr-Aug 2018 targeted orders with replacement; two-proportion z-test"}, "risks": ["review lag: reviews arrive after delivery, so read results 30 days after enrollment closes", "interference: sellers serve both arms; escalations may also help control orders (bias toward null)", "novelty: run whole weeks and check the effect by week"]}, "monthly": [{"purchase_month": "2017-01", "orders": 800, "gmv": 120098.27, "late_delivery_rate": 0.0293333333, "low_review_rate": 0.1556962025, "payment_approval_rate_24h": 0.7725}, {"purchase_month": "2017-02", "orders": 1780, "gmv": 244959.35, "late_delivery_rate": 0.0296430732, "low_review_rate": 0.1617647059, "payment_approval_rate_24h": 0.8106741573}, {"purchase_month": "2017-03", "orders": 2682, "gmv": 368341.32, "late_delivery_rate": 0.0455616654, "low_review_rate": 0.1416760616, "payment_approval_rate_24h": 0.8903803132}, {"purchase_month": "2017-04", "orders": 2404, "gmv": 353842.98, "late_delivery_rate": 0.0655666522, "low_review_rate": 0.1545873481, "payment_approval_rate_24h": 0.7791181364}, {"purchase_month": "2017-05", "orders": 3700, "gmv": 503159.19, "late_delivery_rate": 0.0299012694, "low_review_rate": 0.1276595745, "payment_approval_rate_24h": 0.8035135135}, {"purchase_month": "2017-06", "orders": 3245, "gmv": 429916.61, "late_delivery_rate": 0.0303030303, "low_review_rate": 0.1274083282, "payment_approval_rate_24h": 0.8286594761}, {"purchase_month": "2017-07", "orders": 4026, "gmv": 492287.3, "late_delivery_rate": 0.027892562, "low_review_rate": 0.1220551378, "payment_approval_rate_24h": 0.8184302037}, {"purchase_month": "2017-08", "orders": 4331, "gmv": 568245.79, "late_delivery_rate": 0.0290961126, "low_review_rate": 0.1135411819, "payment_approval_rate_24h": 0.8102054953}, {"purchase_month": "2017-09", "orders": 4285, "gmv": 621415.91, "late_delivery_rate": 0.0438554217, "low_review_rate": 0.1244413079, "payment_approval_rate_24h": 0.7995332555}, {"purchase_month": "2017-10", "orders": 4631, "gmv": 660179.62, "late_delivery_rate": 0.0417597142, "low_review_rate": 0.1323753538, "payment_approval_rate_24h": 0.8153746491}, {"purchase_month": "2017-11", "orders": 7544, "gmv": 1003862.14, "late_delivery_rate": 0.124039517, "low_review_rate": 0.1877005348, "payment_approval_rate_24h": 0.8156150583}, {"purchase_month": "2017-12", "orders": 5673, "gmv": 742183.79, "late_delivery_rate": 0.0745510611, "low_review_rate": 0.1639344262, "payment_approval_rate_24h": 0.8258417063}, {"purchase_month": "2018-01", "orders": 7269, "gmv": 945456.29, "late_delivery_rate": 0.057009478, "low_review_rate": 0.1551173448, "payment_approval_rate_24h": 0.8317512725}, {"purchase_month": "2018-02", "orders": 6728, "gmv": 837895.43, "late_delivery_rate": 0.141266209, "low_review_rate": 0.2089328537, "payment_approval_rate_24h": 0.840665874}, {"purchase_month": "2018-03", "orders": 7211, "gmv": 981051.06, "late_delivery_rate": 0.1896330144, "low_review_rate": 0.2278959149, "payment_approval_rate_24h": 0.8568853141}, {"purchase_month": "2018-04", "orders": 6939, "gmv": 993592.98, "late_delivery_rate": 0.0450132392, "low_review_rate": 0.1298852245, "payment_approval_rate_24h": 0.7601959937}, {"purchase_month": "2018-05", "orders": 6873, "gmv": 992871.75, "late_delivery_rate": 0.065639354, "low_review_rate": 0.119023249, "payment_approval_rate_24h": 0.8427178816}, {"purchase_month": "2018-06", "orders": 6167, "gmv": 863265.53, "late_delivery_rate": 0.0116469816, "low_review_rate": 0.1078000326, "payment_approval_rate_24h": 0.854224096}, {"purchase_month": "2018-07", "orders": 6292, "gmv": 878044.27, "late_delivery_rate": 0.0337881741, "low_review_rate": 0.1110933248, "payment_approval_rate_24h": 0.791481246}, {"purchase_month": "2018-08", "orders": 6512, "gmv": 848860.1, "late_delivery_rate": 0.0618800189, "low_review_rate": 0.1093292213, "payment_approval_rate_24h": 0.8639434889}], "late": [{"bucket": "On time", "orders": 89672, "avg_review": 4.2911574084, "low_review_rate": 0.0924738176}, {"bucket": "1-3 days late", "orders": 1869, "avg_review": 3.2906537007, "low_review_rate": 0.321447866}, {"bucket": "4-7 days late", "orders": 1802, "avg_review": 2.1029748284, "low_review_rate": 0.6767734554}, {"bucket": "8+ days late", "orders": 2860, "avg_review": 1.6966534725, "low_review_rate": 0.7927311983}], "pay": [{"payment_type": "credit_card", "orders": 74721, "gmv": 10611370.14, "avg_approval_hours": 4.4260572519, "approved_24h": 0.9264497121, "late_rate": 0.0670412604, "avg_delivery_days": 12.3307376592, "cancel_rate": 0.0111079884, "order_share": 0.7540720557, "gmv_share": 0.7889770418}, {"payment_type": "boleto", "orders": 19721, "gmv": 2369919.1, "avg_approval_hours": 33.1070270458, "approved_24h": 0.4287818006, "late_rate": 0.073354232, "avg_delivery_days": 13.4730636483, "cancel_rate": 0.012271183, "order_share": 0.1990210919, "gmv_share": 0.1762083252}, {"payment_type": "voucher", "orders": 3123, "gmv": 287339.61, "avg_approval_hours": 7.7218335686, "approved_24h": 0.8657543174, "late_rate": 0.0606060606, "avg_delivery_days": 12.47757317, "cancel_rate": 0.0304194685, "order_share": 0.0315168029, "gmv_share": 0.0213642868}, {"payment_type": "debit_card", "orders": 1525, "gmv": 180900.83, "avg_approval_hours": 9.5265892531, "approved_24h": 0.8990163934, "late_rate": 0.0533423363, "avg_delivery_days": 10.7785001375, "cancel_rate": 0.0085245902, "order_share": 0.0153900494, "gmv_share": 0.0134503462}], "lag": [{"approval_lag": "<=1 day", "orders": 79409, "late_rate": 0.0650052261}, {"approval_lag": "1-2 days", "orders": 11829, "late_rate": 0.0812410178}, {"approval_lag": "2-3 days", "orders": 2784, "late_rate": 0.0840517241}, {"approval_lag": ">3 days", "orders": 2167, "late_rate": 0.0802953392}], "inst": [{"installments": "1x", "orders": 23675, "aov": 82.6227328405, "gmv": 1956093.2, "order_share": 0.3204043794, "gmv_share": 0.1843393619}, {"installments": "2-3x", "orders": 22344, "aov": 113.9163887397, "gmv": 2545347.79, "order_share": 0.3023913602, "gmv_share": 0.2398698525}, {"installments": "4-6x", "orders": 15922, "aov": 157.2875617109, "gmv": 2504175.27, "order_share": 0.2154795577, "gmv_share": 0.2359898144}, {"installments": "7x+", "orders": 11950, "aov": 301.7872346836, "gmv": 3605753.88, "order_share": 0.1617247026, "gmv_share": 0.3398009713}], "dec": [{"decile": 0, "orders": 3215, "late_rate": 0.0068429238, "low_review_rate": 0.1294154423}, {"decile": 1, "orders": 3215, "late_rate": 0.0183514774, "low_review_rate": 0.1063962559}, {"decile": 2, "orders": 3215, "late_rate": 0.0242612753, "low_review_rate": 0.1023474178}, {"decile": 3, "orders": 3215, "late_rate": 0.0307931571, "low_review_rate": 0.092841513}, {"decile": 4, "orders": 3215, "late_rate": 0.0360808709, "low_review_rate": 0.091817614}, {"decile": 5, "orders": 3215, "late_rate": 0.0404354588, "low_review_rate": 0.0790378007}, {"decile": 6, "orders": 3215, "late_rate": 0.0538102644, "low_review_rate": 0.1020599251}, {"decile": 7, "orders": 3215, "late_rate": 0.0541213064, "low_review_rate": 0.1069084089}, {"decile": 8, "orders": 3215, "late_rate": 0.0622083981, "low_review_rate": 0.1003438575}, {"decile": 9, "orders": 3215, "late_rate": 0.1150855365, "low_review_rate": 0.126919461}], "power": [{"mde_pp": 1.0, "relative_mde_pct": 9, "n_per_arm": 14915, "total_n": 29830, "weeks_at_2018_volume": 67.0}, {"mde_pp": 1.5, "relative_mde_pct": 13, "n_per_arm": 6487, "total_n": 12974, "weeks_at_2018_volume": 29.1}, {"mde_pp": 2.0, "relative_mde_pct": 18, "n_per_arm": 3567, "total_n": 7134, "weeks_at_2018_volume": 16.0}, {"mde_pp": 2.5, "relative_mde_pct": 22, "n_per_arm": 2230, "total_n": 4460, "weeks_at_2018_volume": 10.0}, {"mde_pp": 3.0, "relative_mde_pct": 27, "n_per_arm": 1511, "total_n": 3022, "weeks_at_2018_volume": 6.8}], "dq": [{"check_name": "orders_pk_unique", "layer": "raw", "severity": "error", "failing_rows": 0, "total_rows": 99441, "description": "order_id must be unique in orders", "failing_pct": 0.0, "status": "PASS"}, {"check_name": "payments_type_not_defined", "layer": "raw", "severity": "warn", "failing_rows": 3, "total_rows": 103886, "description": "payment_type = not_defined (mapped to unknown in staging)", "failing_pct": 0.0, "status": "WARN"}, {"check_name": "payments_zero_installments", "layer": "raw", "severity": "warn", "failing_rows": 2, "total_rows": 103886, "description": "installments < 1 (floored to 1 in staging)", "failing_pct": 0.0, "status": "WARN"}, {"check_name": "reviews_duplicate_review_id", "layer": "raw", "severity": "warn", "failing_rows": 814, "total_rows": 99224, "description": "review_id appears more than once", "failing_pct": 0.82, "status": "WARN"}, {"check_name": "reviews_multiple_per_order", "layer": "raw", "severity": "warn", "failing_rows": 551, "total_rows": 99224, "description": "extra reviews per order (deduplicated to latest in staging)", "failing_pct": 0.56, "status": "WARN"}, {"check_name": "orders_without_items", "layer": "raw", "severity": "warn", "failing_rows": 775, "total_rows": 99441, "description": "orders with no line items (mostly canceled/unavailable)", "failing_pct": 0.78, "status": "WARN"}, {"check_name": "orders_without_payment", "layer": "raw", "severity": "warn", "failing_rows": 1, "total_rows": 99441, "description": "orders with no payment record", "failing_pct": 0.0, "status": "WARN"}, {"check_name": "items_orphan_seller", "layer": "raw", "severity": "error", "failing_rows": 0, "total_rows": 112650, "description": "order items referencing an unknown seller", "failing_pct": 0.0, "status": "PASS"}, {"check_name": "orders_orphan_customer", "layer": "raw", "severity": "error", "failing_rows": 0, "total_rows": 99441, "description": "orders referencing an unknown customer", "failing_pct": 0.0, "status": "PASS"}, {"check_name": "delivered_missing_timestamp", "layer": "raw", "severity": "warn", "failing_rows": 8, "total_rows": 99441, "description": "status delivered but no delivery timestamp", "failing_pct": 0.01, "status": "WARN"}, {"check_name": "delivered_before_purchase", "layer": "raw", "severity": "error", "failing_rows": 0, "total_rows": 99441, "description": "delivery timestamp earlier than purchase timestamp", "failing_pct": 0.0, "status": "PASS"}, {"check_name": "approved_before_purchase", "layer": "raw", "severity": "error", "failing_rows": 0, "total_rows": 99441, "description": "payment approved before the order was placed", "failing_pct": 0.0, "status": "PASS"}, {"check_name": "mart_orders_row_count", "layer": "mart", "severity": "error", "failing_rows": 0, "total_rows": 99441, "description": "fct_orders must keep exactly one row per raw order (no fan-out from joins)", "failing_pct": 0.0, "status": "PASS"}, {"check_name": "recon_payment_vs_order_value", "layer": "mart", "severity": "warn", "failing_rows": 249, "total_rows": 98665, "description": "payment total differs from items + freight by more than R$1", "failing_pct": 0.25, "status": "WARN"}]};
+const F = D.f, E = D.exp;
+const $ = id => document.getElementById(id);
+const fmtInt = n => Math.round(n).toLocaleString("en-US");
+const pct = (x, d = 1) => (x * 100).toFixed(d) + "%";
+const brl = n => "R$" + (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : fmtInt(n));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---------- tooltip ----------
+const tip = $("tip");
+document.addEventListener("pointermove", e => {
+  const t = e.target.closest("[data-tip]");
+  if (!t) { tip.hidden = true; return; }
+  tip.textContent = t.dataset.tip; tip.hidden = false;
+  const x = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
+  tip.style.left = x + "px"; tip.style.top = (e.clientY + 14) + "px";
+});
+document.addEventListener("pointerleave", () => { tip.hidden = true; });
+
+function hbars(el, rows, { max, fmt = v => pct(v), hi = () => false } = {}) {
+  const m = max ?? Math.max(...rows.map(r => r.value)) * 1.08;
+  el.innerHTML = rows.map(r => `
+    <div class="hbar ${hi(r) ? "hi" : ""}" data-tip="${esc(r.tip ?? r.label + ": " + fmt(r.value))}">
+      <span class="lab">${esc(r.label)}</span>
+      <span class="track"><span class="fill" style="width:${(r.value / m * 100).toFixed(2)}%"></span></span>
+      <span class="val">${fmt(r.value)}</span>
+    </div>`).join("");
+}
+
+// ---------- header ----------
+const H = F.headline;
+$("window").textContent = "Jan 2017 – Aug 2018";
+$("lede").textContent = `A late delivery raises the chance of a 1–2 star review by ${F.late_to_reviews.adjusted_effect_pp} percentage points, and slow payment methods make late deliveries more likely. This study measures both across ${fmtInt(H.orders)} orders, sizes the fixes, and designs the experiment that would prove them.`;
+$("kpis").innerHTML = [
+  [fmtInt(H.orders), "orders"], [brl(H.gmv_brl), "GMV (excl. freight)"], [fmtInt(H.sellers), "sellers"],
+  [H.late_delivery_rate_pct + "%", "delivered late"], [H.low_review_rate_pct + "%", "1–2 star reviews"],
+].map(([v, l]) => `<div><span class="num">${v}</span><span class="lab">${l}</span></div>`).join("");
+
+// ---------- finding 1 ----------
+const L = F.late_to_reviews;
+$("f1").innerHTML = `On-time orders get a 1–2 star review <b>${L.low_review_on_time_pct}%</b> of the time. Late orders get one <b>${L.low_review_late_pct}%</b> of the time, and the rate climbs with every day of delay.`;
+hbars($("c-late"), D.late.map(r => ({ label: r.bucket, value: r.low_review_rate,
+  tip: `${r.bucket}: ${pct(r.low_review_rate)} low reviews · ${fmtInt(r.orders)} orders · avg ${r.avg_review.toFixed(2)} stars` })),
+  { max: 1, hi: r => r.label !== "On time" });
+$("s1").innerHTML = `
+  <div class="stat hot"><span class="num">+${L.adjusted_effect_pp} pp</span><span class="lab">effect of a late delivery on the chance of a 1–2 star review, after controls (95% CI ${L.adjusted_effect_ci_pp[0]}–${L.adjusted_effect_ci_pp[1]})</span></div>
+  <div class="stat"><span class="num">${L.avg_review_on_time} → ${L.avg_review_late}</span><span class="lab">average stars, on-time vs late</span></div>`;
+const R = F.late_to_repurchase;
+$("n1").innerHTML = `<b>Null result, reported as found.</b> New customers whose first order arrived late came back within 180 days slightly less often (${R.repurchase_late_pct}% vs ${R.repurchase_on_time_pct}%), but the controlled difference is not significant (p = ${R.p_value}). Repeat buying is rare on this marketplace (${H.repurchase_rate_180d_pct}%), so reviews, not repurchase, are the outcome to manage.`;
+
+// ---------- finding 2 ----------
+const P = F.payments, I = F.installments;
+$("f2").innerHTML = `Boleto, a bank slip paid in cash or online banking, takes <b>${P.boleto_avg_approval_hours} hours</b> on average to approve against <b>${P.card_avg_approval_hours}</b> for cards. The delivery promise is set at purchase, so the wait comes out of the shipping window. Orders approved after 24 hours are late more often, by <b>${P.slow_pay_adjusted_effect_pp} points</b> after controls (${P.slow_pay_relative_increase_pct}% higher than the ${P.late_rate_fast_approval_pct}% base).`;
+const names = { credit_card: "Credit card", boleto: "Boleto", voucher: "Voucher", debit_card: "Debit card" };
+hbars($("c-pay"), D.pay.map(r => ({ label: names[r.payment_type], value: r.approved_24h,
+  tip: `${names[r.payment_type]}: ${pct(r.approved_24h)} approved in 24h · avg ${r.avg_approval_hours.toFixed(1)}h · ${pct(r.order_share)} of orders` })),
+  { max: 1, hi: r => r.label === "Boleto" });
+hbars($("c-lag"), D.lag.map(r => ({ label: r.approval_lag, value: r.late_rate,
+  tip: `Approved ${r.approval_lag}: ${pct(r.late_rate)} late · ${fmtInt(r.orders)} orders` })),
+  { max: 0.1, hi: r => r.label !== "<=1 day" });
+$("c-inst").innerHTML = D.inst.map(r => `
+  <div class="hbar pair" data-tip="${r.installments}: ${pct(r.order_share)} of orders, ${pct(r.gmv_share)} of GMV, AOV R$${r.aov.toFixed(0)}">
+    <span class="lab">${r.installments}</span>
+    <span class="pair-rows">
+      <span class="track"><span class="fill" style="width:${(r.order_share / 0.4 * 100).toFixed(1)}%"></span></span>
+      <span class="track"><span class="fill" style="width:${(r.gmv_share / 0.4 * 100).toFixed(1)}%;background:var(--hot)"></span></span>
+    </span>
+    <span class="val">${pct(r.order_share, 0)} / ${pct(r.gmv_share, 0)}</span>
+  </div>`).join("");
+const RC = F.reconciliation;
+$("n2").innerHTML = `Orders paid in 7 or more installments are <b>${I.seven_plus_order_share_pct}%</b> of card orders but <b>${I.seven_plus_gmv_share_pct}%</b> of card GMV, with an average order ${I.aov_multiple}× the size of a single payment. Installments also explain the payment reconciliation breaks: <b>${RC.breaks_from_installment_interest} of ${RC.breaks}</b> orders where the payment total did not match items plus freight (${RC.share_explained_by_installment_interest_pct}%) were installment card orders where the buyer paid interest on top.`;
+
+// ---------- finding 3 ----------
+const S = F.sellers, T = F.review_themes;
+$("f3").innerHTML = `The top 10% of sellers hold <b>${S.top10pct_gmv_share_pct}%</b> of GMV. Among the ${S.eligible_sellers_30plus_orders} sellers with at least 30 orders, <b>${S.at_risk_sellers}</b> run late or poorly reviewed at 1.5× the platform rate or worse.`;
+$("s3").innerHTML = `
+  <div class="stat"><span class="num">${S.at_risk_order_share_pct}%</span><span class="lab">of orders come from at-risk sellers</span></div>
+  <div class="stat hot"><span class="num">${S.at_risk_share_of_late_pct}%</span><span class="lab">of late deliveries come from them</span></div>
+  <div class="stat hot"><span class="num">${S.at_risk_share_of_low_reviews_pct}%</span><span class="lab">of 1–2 star reviews come from them</span></div>`;
+$("themes-sub").textContent = `${fmtInt(T.low_review_comments)} comments in Portuguese, tagged by keyword rules · bias-corrected share using test-set precision and recall`;
+hbars($("c-themes"), [
+  { label: "Delivery: not received or late", value: T.delivery_issue_bias_corrected_pct / 100, tip: `Delivery: ${T.delivery_issue_tagged_pct}% tagged, ${T.delivery_issue_bias_corrected_pct}% bias-corrected` },
+  { label: "Product: wrong, missing, damaged", value: T.product_issue_bias_corrected_pct / 100, tip: `Product: ${T.product_issue_tagged_pct}% tagged, ${T.product_issue_bias_corrected_pct}% bias-corrected` },
+  { label: "Refund, cancel or support", value: T.service_issue_tagged_pct / 100, tip: `Service: ${T.service_issue_tagged_pct}% tagged (not evaluated)` },
+], { max: 0.6, hi: r => r.label.startsWith("Delivery") });
+$("n3").innerHTML = `<b>A payments risk signal.</b> Among 1–2 star reviews on orders the system recorded as delivered on time, ${T.delivery_issue_share_among_on_time_orders_pct}% still describe a delivery problem, often “marked delivered but I never received it”. On a payments platform these are the orders most likely to turn into item-not-received disputes. Tagging quality on a held-out set of ${T.test_set_n} hand-labelled reviews: delivery precision ${T.delivery_precision.toFixed(2)}, recall ${T.delivery_recall.toFixed(2)}; product precision ${T.product_precision.toFixed(2)}, recall ${T.product_recall.toFixed(2)}.`;
+
+// ---------- model ----------
+const M = F.risk_model;
+$("f4").innerHTML = `A gradient-boosted model trained on orders up to March 2018 and tested on April–August 2018 reaches an AUC of <b>${M.auc}</b>. That is modest, but useful for targeting: the top risk decile is late <b>${M.top_decile_late_rate_pct}%</b> of the time (${M.top_decile_lift}× the ${M.test_late_rate_pct}% average), and the top three deciles hold <b>${M.top3_deciles_capture_pct}%</b> of all late orders.`;
+$("dec-sub").textContent = `Test set: ${fmtInt(M.test_n)} delivered orders, Apr–Aug 2018 · decile 10 = highest predicted risk`;
+const dmax = 0.13;
+$("c-dec").innerHTML = D.dec.map(r => `<div class="col ${r.decile >= 7 ? "hi" : ""}" style="height:${(r.late_rate / dmax * 100).toFixed(1)}%" data-tip="Decile ${r.decile + 1}: ${pct(r.late_rate)} late · ${fmtInt(r.orders)} orders">${r.decile >= 7 ? `<span class="tag">${pct(r.late_rate)}</span>` : ""}</div>`).join("");
+$("c-dec").setAttribute("aria-label", "Late rate by risk decile: " + D.dec.map(r => pct(r.late_rate)).join(", "));
+$("c-dec-axis").innerHTML = D.dec.map(r => `<span>${r.decile + 1}</span>`).join("");
+
+(function line() {
+  const svg = $("c-month"), W = 700, Hh = 220, pl = 40, pr = 12, pt = 12, pb = 28;
+  const rows = D.monthly, n = rows.length, ymax = 0.25;
+  const x = i => pl + i * (W - pl - pr) / (n - 1), y = v => pt + (1 - v / ymax) * (Hh - pt - pb);
+  let g = "";
+  for (const t of [0, 0.05, 0.10, 0.15, 0.20, 0.25]) g += `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}"/><text x="${pl - 6}" y="${y(t) + 4}" text-anchor="end">${t * 100}%</text>`;
+  rows.forEach((r, i) => { if (i % 3 === 0) g += `<text x="${x(i)}" y="${Hh - 8}" text-anchor="middle">${r.purchase_month.replace("-", "·")}</text>`; });
+  const pts = rows.map((r, i) => `${x(i).toFixed(1)},${y(r.late_delivery_rate).toFixed(1)}`);
+  g += `<polygon class="area" points="${x(0)},${y(0)} ${pts.join(" ")} ${x(n - 1)},${y(0)}"/>`;
+  g += `<polyline class="path" points="${pts.join(" ")}"/>`;
+  const peak = rows.reduce((a, r, i) => r.late_delivery_rate > rows[a].late_delivery_rate ? i : a, 0);
+  g += `<circle class="dot" cx="${x(peak)}" cy="${y(rows[peak].late_delivery_rate)}" r="5"/><text x="${x(peak) + 8}" y="${y(rows[peak].late_delivery_rate) - 6}" style="fill:var(--ink-2)">${rows[peak].purchase_month}: ${pct(rows[peak].late_delivery_rate)}</text>`;
+  rows.forEach((r, i) => { g += `<rect class="hit" x="${x(i) - (W - pl - pr) / (n - 1) / 2}" y="${pt}" width="${(W - pl - pr) / (n - 1)}" height="${Hh - pt - pb}" data-tip="${r.purchase_month}: ${pct(r.late_delivery_rate)} late · ${fmtInt(r.orders)} orders"/>`; });
+  svg.innerHTML = g;
+})();
+
+// ---------- experiment ----------
+$("exp-title").textContent = E.name;
+$("f5").textContent = E.hypothesis;
+const sim = E.simulation_checks;
+$("spec").innerHTML = [
+  ["Who is in it", E.eligibility],
+  ["Randomization", E.unit_of_randomization],
+  ["Primary metric", `${E.primary_metric}; baseline ${E.baseline_pct}% from ${fmtInt(E.baseline_source_orders)} historical orders`],
+  ["Effect to detect", `−${E.mde_pp} pp (${E.relative_mde_pct}% relative)`],
+  ["Sample size", `${fmtInt(E.n_per_arm)} orders per arm, ${fmtInt(E.total_n)} total ≈ ${E.duration_weeks_at_2018_volume} weeks at 2018 volume`],
+  ["Design check", `${fmtInt(sim.simulations)} simulations on resampled real orders: A/A false-positive rate ${sim.aa_false_positive_rate_pct}% (target 5%), power ${sim.simulated_power_pct}% (target 80%)`],
+  ["Guardrails", E.guardrails.join(" · ")],
+  ["Decision rule", E.decision_rule],
+  ["Risks", E.risks.join(" · ")],
+].map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("");
+$("t-power").innerHTML = `<thead><tr><th>Detectable drop</th><th class="n">Relative</th><th class="n">Per arm</th><th class="n">Total</th><th class="n">Weeks</th></tr></thead><tbody>` +
+  D.power.map(r => `<tr${r.mde_pp === E.mde_pp ? ' style="font-weight:600"' : ""}><td class="mono">−${r.mde_pp.toFixed(1)} pp${r.mde_pp === E.mde_pp ? " · chosen" : ""}</td><td class="n">${r.relative_mde_pct}%</td><td class="n">${fmtInt(r.n_per_arm)}</td><td class="n">${fmtInt(r.total_n)}</td><td class="n">${r.weeks_at_2018_volume}</td></tr>`).join("") + `</tbody>`;
+
+// ---------- recommendations ----------
+const Z = F.sizing;
+$("recs").innerHTML = `
+  <div class="rec"><h3>Start the delivery clock at payment approval</h3><p>Quote the delivery date from approval for slow methods such as boleto, or add the expected approval time to the promise at checkout. Removing the slow-approval effect would avoid about <span class="num">${fmtInt(Z.slow_pay_late_orders_avoidable_per_year)}</span> late orders and <span class="num">${fmtInt(Z.slow_pay_low_reviews_avoidable_per_year)}</span> 1–2 star reviews a year at 2017–18 volume.</p></div>
+  <div class="rec"><h3>Run the proactive delay-alert test on high-risk orders</h3><p>Score each order at approval and randomize the top 30%. The test needs ${fmtInt(E.total_n)} orders, about ${E.duration_weeks_at_2018_volume} weeks at the platform's 2018 volume; at a larger processor it would finish in days.</p></div>
+  <div class="rec"><h3>Put the ${S.at_risk_sellers} at-risk sellers on a fulfilment plan</h3><p>Bringing their late rate down to the platform average would remove about <span class="num">${fmtInt(S.excess_late_orders_vs_platform)}</span> late orders and <span class="num">${fmtInt(S.low_reviews_avoidable_if_fixed)}</span> 1–2 star reviews over the 20 months studied, while protecting ${brl(S.at_risk_gmv_brl)} in GMV.</p></div>
+  <div class="rec"><h3>Flag “delivered but not received” complaints for dispute prevention</h3><p>Route these reviews to proof-of-delivery checks before they become chargebacks, and track their rate by carrier and seller.</p></div>`;
+$("canada").innerHTML = `<b>Why this matters in Canada.</b> Canadians made 22.5 billion payments worth $12.2 trillion in 2024, and 60% bought something online in a given month. Online purchases are expected to reach $96.7 billion by 2028. As the Real-Time Rail arrives (49% of Canadians find real-time payments appealing), merchants will mix instant and slower bank-rail payments at checkout, which is exactly when a payment-aware delivery promise pays off. Source: Payments Canada, Canadian Payment Methods and Trends Report 2025.`;
+
+// ---------- build ----------
+const Q = F.data_quality;
+$("flow-metrics").textContent = `Metric registry (${H.metrics_defined} metrics, YAML)`;
+$("f7").innerHTML = `Each metric is defined once in a YAML registry and compiled to SQL, so the dashboard, the model and the test design cannot disagree on what “late” or “GMV” means. The pipeline runs <b>${Q.checks}</b> data-quality checks on every build; ${Q.blocking_failures} blocking checks failed, and ${Q.warnings} data issues were found and handled in staging.`;
+const label = s => s.replace(/_/g, " ");
+$("t-dq").innerHTML = `<thead><tr><th>Check</th><th>Layer</th><th class="n">Rows flagged</th><th class="n">Of</th><th>Status</th></tr></thead><tbody>` +
+  D.dq.map(r => `<tr><td>${esc(label(r.check_name))}</td><td class="mono">${r.layer}</td><td class="n">${fmtInt(r.failing_rows)}</td><td class="n">${fmtInt(r.total_rows)}</td><td><span class="pill ${r.status === "PASS" ? "pass" : "handled"}">${r.status === "PASS" ? "PASS" : r.status === "WARN" ? "HANDLED" : r.status}</span></td></tr>`).join("") + `</tbody>`;
+$("n7").innerHTML = `<b>AI use.</b> Claude was used to draft SQL models, pipeline code and the Portuguese keyword rules, and to speed up debugging. Every number on this page is computed by the pipeline and checked against the source tables; the review-theme rules were evaluated on a hand-labelled held-out sample before use.`;
+</script>
