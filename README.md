@@ -1,5 +1,12 @@
 # Late Orders, Lost Stars
-**Author:** Cindy Wang · 📄 [Full report (PDF)](outputs/Late_Orders_Lost_Stars_Project_Report.pdf)
+**Author:** Cindy Wang
+
+### 📄 [Read the full 10-page report (PDF)](outputs/Late_Orders_Lost_Stars_Project_Report.pdf)
+
+<a href="outputs/Late_Orders_Lost_Stars_Project_Report.pdf"><img src="docs/page-01.png" width="49%" alt="Report cover"></a>
+<a href="outputs/Late_Orders_Lost_Stars_Project_Report.pdf"><img src="docs/page-02.png" width="49%" alt="Executive summary"></a>
+
+---
 
 ### Payments & delivery analytics on 99,092 real marketplace orders (Olist, Brazil, 2017–2018)
 

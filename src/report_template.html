@@ -386,9 +386,8 @@ const refs = [
 ];
 pages.push(`<section class="page">
   ${head("Sources", "Sources and references")}
-  <p class="text">Numbers in brackets refer to these sources throughout the report. Web sources were accessed on ${esc(AUTHOR.retrieved)}.</p>
+  <p class="text">Numbers in brackets refer to these sources throughout the report. Web sources were accessed on ${esc(AUTHOR.retrieved)}.${AUTHOR.repo ? ` Code and data pipeline: <b>${esc(AUTHOR.repo)}</b>` : ""}</p>
   <div class="refs">${refs.map(([g, items]) => `<div class="refgroup">${g}</div>` + items.map(([n, c, u, use]) => `<div class="ref"><span class="no">${n}</span><div><div class="cite">${c}</div><span class="url">${u}</span><div class="use">${use}</div></div></div>`).join("")).join("")}</div>
-  ${AUTHOR.repo ? `<p class="text"><b>Code:</b> ${esc(AUTHOR.repo)}</p>` : ""}
   ${foot(10)}
 </section>`);
 
